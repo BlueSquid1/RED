@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 using OpenTK;
 
-namespace RFGR
+namespace RED
 {
     class Program
     {
         //[STAThread]
         static void Main(string[] args)
         {
-            Game program = new Game(OpenTK.Graphics.GraphicsMode.Default);
-            program.LoadResources();
-            program.Run(60);
+            Game program = new Game();
+            //program.LoadResources();
+            program.Run(60.0);
         }
     }
 }

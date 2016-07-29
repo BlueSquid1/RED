@@ -4,20 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Drawing;
 
 using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
-using System.Drawing; //only used for color
-using OpenTK.Input; //for keyboard input
 
-namespace RFGR
+namespace RED
 {
-    class Game : GameWindow
+    class Game
     {
-        private Physics physicsEngine;
-        private float frameTime;
-        private int fps;
+        protected Physics physicsEngine;
+        protected OpenTK.GameWindow game;
+
+        protected float frameTime;
+        protected int fps;
         private float angle = 0.0f;
 
         float[] normals = new float[] {0,0,1,  0,0,1,  0,0,1,  0,0,1,
@@ -43,16 +43,24 @@ namespace RFGR
 
 
 
-        //constructor
-        public Game(OpenTK.Graphics.GraphicsMode mode)
-            : base(800, 600, mode, "RED Remake")
+
+        public Game()
         {
-            //used adaptive refreshing
-            base.VSync = OpenTK.VSyncMode.Adaptive;
-            physicsEngine = new Physics();
+            //create a window
+            this.game = new OpenTK.GameWindow(800,600, new OpenTK.Graphics.GraphicsMode(), "RED");
+            this.game.VSync = VSyncMode.Off;
+
+            //initalize Physics engine
+            this.physicsEngine = new Physics();
+
+            this.game.Load += LoadResources;
+            this.game.UpdateFrame += UpdateFrame;
+            this.game.Unload += Unload;
+            this.game.RenderFrame += RenderFrame;
+            this.game.Resize += windowResize;
         }
 
-        public bool LoadResources()
+        void LoadResources(object sender, EventArgs e)
         {
             //add the ground
             physicsEngine.AddPlane();
@@ -61,44 +69,37 @@ namespace RFGR
             BulletSharp.Math.Matrix transformSphere = BulletSharp.Math.Matrix.Identity;
             transformSphere.M42 = 20;
             physicsEngine.AddSphere(1.0f, transformSphere, 1.0f);
-            
-
-            return true;
         }
 
-        //----????
-        protected override void OnLoad(System.EventArgs e)
+        void windowResize(object sender, EventArgs e)
         {
-            GL.Enable(EnableCap.DepthTest);
-            GL.ClearColor(System.Drawing.Color.MidnightBlue);
-
-            GL.Enable(EnableCap.ColorMaterial);
-            GL.Enable(EnableCap.Light0);
-            GL.Enable(EnableCap.Lighting);
-        }
-
-        
-        protected override void OnUnload(System.EventArgs e)
-        {
-            physicsEngine.ExitPhysics();
-            base.OnUnload(e);
+            GL.Viewport(0, 0, game.Width, game.Height);
         }
 
 
-        protected override void OnUpdateFrame(FrameEventArgs e)
+
+        protected void UpdateFrame(object sender, FrameEventArgs e)
         {
+            //handle events
             physicsEngine.Update((float)e.Time);
 
 
-            KeyboardState state = OpenTK.Input.Keyboard.GetState();
-            if (state.IsKeyDown(Key.Escape))
+            OpenTK.Input.KeyboardState state = OpenTK.Input.Keyboard.GetState();
+            if (state.IsKeyDown(OpenTK.Input.Key.Escape))
             {
-                Exit();
+                //quit
+                this.game.Exit();
             }
+            else
+            {
+                //state.
+            }
+
+            //proccess data
+
         }
 
-
-        protected override void OnRenderFrame(FrameEventArgs e)
+        protected void RenderFrame(object sender, FrameEventArgs e)
         {
             //update title
             frameTime += (float)e.Time;
@@ -106,14 +107,14 @@ namespace RFGR
             if (frameTime >= 1)
             {
                 frameTime = 0;
-                Title = "RED Remake, FPS = " + fps.ToString();
+                this.game.Title = "RED, FPS = " + fps.ToString();
                 fps = 0;
             }
 
             
-            GL.Viewport(0, 0, Width, Height);
+            GL.Viewport(0, 0, game.Width, game.Height);
 
-            float aspect_ratio = Width / (float)Height;
+            float aspect_ratio = (float)game.Width / (float)game.Height;
             OpenTK.Matrix4 perspective = OpenTK.Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect_ratio, 0.1f, 100);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadMatrix(ref perspective);
@@ -148,58 +149,29 @@ namespace RFGR
 
             UninitCube();
 
-            SwapBuffers();
+            this.game.SwapBuffers();
         }
 
 
-        /*
-        private void DrawCube(Color color, float size)
+
+        protected void Unload(object sender, System.EventArgs e)
         {
-            GL.Begin(PrimitiveType.Quads);
-
-            GL.Color3(color);
-            GL.Vertex3(-size, -size, -size);
-            GL.Vertex3(-size, size, -size);
-            GL.Vertex3(size, size, -size);
-            GL.Vertex3(size, -size, -size);
-
-            GL.Vertex3(-size, -size, -size);
-            GL.Vertex3(size, -size, -size);
-            GL.Vertex3(size, -size, size);
-            GL.Vertex3(-size, -size, size);
-
-            GL.Vertex3(-size, -size, -size);
-            GL.Vertex3(-size, -size, size);
-            GL.Vertex3(-size, size, size);
-            GL.Vertex3(-size, size, -size);
-            
-            GL.Vertex3(-size, -size, size);
-            GL.Vertex3(size, -size, size);
-            GL.Vertex3(size, size, size);
-            GL.Vertex3(-size, size, size);
-
-            GL.Vertex3(-size, size, -size);
-            GL.Vertex3(-size, size, size);
-            GL.Vertex3(size, size, size);
-            GL.Vertex3(size, size, -size);
-
-            GL.Vertex3(size, -size, -size);
-            GL.Vertex3(size, size, -size);
-            GL.Vertex3(size, size, size);
-            GL.Vertex3(size, -size, size);
-
-            GL.End();
+            physicsEngine.ExitPhysics();
         }
-        */
 
-        void DrawCube2(Color color, float size)
+        public void Run(double fps)
+        {
+            this.game.Run(fps);
+        }
+
+        private void DrawCube2(Color color, float size)
         {
             GL.Color3(color);
             GL.DrawElements(PrimitiveType.Quads, 24, DrawElementsType.UnsignedByte, indices);
         }
 
 
-        void InitCube()
+        private void InitCube()
         {
             GL.EnableClientState(ArrayCap.NormalArray);
             GL.EnableClientState(ArrayCap.VertexArray);
@@ -207,13 +179,13 @@ namespace RFGR
             GL.VertexPointer(3, VertexPointerType.Float, 0, vertices);
         }
 
-        void UninitCube()
+        private void UninitCube()
         {
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.DisableClientState(ArrayCap.NormalArray);
         }
 
-        public static Matrix4 Convert( BulletSharp.Math.Matrix m )
+        private static Matrix4 Convert(BulletSharp.Math.Matrix m)
         {
             return new Matrix4(
                 m.M11, m.M12, m.M13, m.M14,

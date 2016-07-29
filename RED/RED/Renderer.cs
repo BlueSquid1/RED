@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using OpenTK.Graphics.OpenGL;
 
-namespace RFGR
+namespace RED
 {
     class Renderer
     {

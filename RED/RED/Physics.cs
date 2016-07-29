@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using BulletSharp; //for physic bodies
 
-namespace RFGR
+namespace RED
 {
     class Physics
     {
